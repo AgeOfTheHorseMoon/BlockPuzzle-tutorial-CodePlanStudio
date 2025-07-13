@@ -20,18 +20,62 @@ public class Shape : MonoBehaviour, IPointerClickHandler, IPointerUpHandler, IBe
     private bool _shapeDraggable = true;
     private Canvas _canvas;
 
+    private Vector3 _startPosition;
+    private bool _shapeActive = true;
+
     public void Awake()
     {
         _shapeStartScale = this.GetComponent<RectTransform>().localScale;
         _transform = this.GetComponent<RectTransform>();
         _canvas = GetComponentInParent<Canvas>();
         _shapeDraggable = true;
+        _startPosition = _transform.localPosition; 
+        _shapeActive = true;
+    }
+
+    public bool IsOnStartPosition()
+    {
+        return _transform.localPosition == _startPosition;
+    }
+
+    public bool IsAnyOfShapeSquareActive()
+    {
+        foreach (var square in _currentShape)
+        {
+            if (square.gameObject.activeSelf)
+                return true;
+        }
+        return false;
+    }
+
+    public void DeactivateShape()
+    {
+        if(_shapeActive)
+        {
+            foreach(var square in _currentShape)
+            {
+                square?.GetComponent<ShapeSquare>().DeactivateShape();
+            }
+        }
+        _shapeActive = false;
+    }
+
+    public void ActivateShape()
+    {
+        if(!_shapeActive)
+        {
+            foreach( var square in _currentShape)
+            {
+                square?.GetComponent<ShapeSquare>().ActivateShape();
+            }
+        }
+        _shapeActive = true;
     }
 
     public void RequestNewShape(ShapeData shapeData)
     {
+        _transform.localPosition = _startPosition;
         CreateShape(shapeData);
-
     }
 
     public void CreateShape(ShapeData shapeData)
@@ -72,113 +116,6 @@ public class Shape : MonoBehaviour, IPointerClickHandler, IPointerUpHandler, IBe
             }
         }
     }
-
-    /*
-    private float GetYPositionShapeSquare(ShapeData shapeData, int row, Vector2 moveDistance)
-    {
-        float ShiftOnY = 0f;
-
-        if (shapeData.rows > 1)
-        {
-            if (shapeData.rows % 2 != 0)
-            {
-                var middleSquareIndex = (shapeData.rows - 1) / 2;
-                var multiplier = (shapeData.rows - 1) / 2;
-
-                if (row < middleSquareIndex) //move it on minus
-                {
-                    ShiftOnY = moveDistance.y * 1;
-                    ShiftOnY *= multiplier;
-                }
-                else if (row > middleSquareIndex) // move it on plus
-                {
-                    ShiftOnY = moveDistance.y * -1;
-                    ShiftOnY *= multiplier;
-                }
-            }
-            else
-            {
-                var middleSquareIndex2 = (shapeData.rows == 2) ? 1 : (shapeData.rows / 2);
-                var middleSquareIndex1 = (shapeData.rows == 2) ? 0 : shapeData.rows - 2;
-                var multiplier = shapeData.rows / 2;
-
-                if (row == middleSquareIndex1 || row == middleSquareIndex2)
-                {
-                    if (row == middleSquareIndex2)
-                        ShiftOnY = (moveDistance.y / 2) * -1;
-                    if (row == middleSquareIndex1)
-                        ShiftOnY = (moveDistance.y / 2);
-                }
-
-                if (row < middleSquareIndex1 && row < middleSquareIndex2) //move it on minus
-                {
-                    ShiftOnY = moveDistance.y * 1;
-                    ShiftOnY *= multiplier;
-                }
-                else if (row > middleSquareIndex1 || row > middleSquareIndex2) // move it on plus
-                {
-                    ShiftOnY = moveDistance.y * -1;
-                    ShiftOnY *= multiplier;
-                }
-            }            
-        }
-
-        return ShiftOnY;
-    }
-
-    private float GetXPositionForShapeSquare(ShapeData shapeData, int column, Vector2 moveDistance)
-    {
-        float shiftOnX = 0f;
-
-        if(shapeData.columns > 1) // vertical position calculation
-        {
-            if (shapeData.columns % 2 != 0)
-            {
-                var middleSquareIndex = (shapeData.columns - 1) / 2;
-                var multiplier = (shapeData.columns - 1) / 2;
-                if (column < middleSquareIndex) // move it on the negative
-                {
-                    shiftOnX = moveDistance.x * -1;
-                    shiftOnX *= multiplier;
-                }
-                else if (column > middleSquareIndex) // move it on plus
-                {
-                    shiftOnX = moveDistance.x * 1;
-                    shiftOnX *= multiplier;
-                }
-            }
-            else
-            {
-                var middleSquareIndex2 = (shapeData.columns == 2) ? 1 : (shapeData.columns / 2);
-                var middleSquareIndex1 = (shapeData.columns == 2) ? 0 : shapeData.columns - 1;
-                var multiplier = shapeData.columns / 2;
-
-                if (column == middleSquareIndex1 || column == middleSquareIndex2)
-                {
-                    if (column == middleSquareIndex2)
-                        shiftOnX = moveDistance.x / 2;
-                    if (column == middleSquareIndex1)
-                        shiftOnX = (moveDistance.x / 2) * -1;
-                }
-
-                if(column < middleSquareIndex1 && column < middleSquareIndex2) // move it on negative
-                {
-                    shiftOnX += moveDistance.x * -1;
-                    shiftOnX *= multiplier;
-                }
-                else if (column > middleSquareIndex1 && column > middleSquareIndex2) // move it on plus
-                {
-                    shiftOnX = moveDistance.x * 1;
-                    shiftOnX *= multiplier;
-                }
-            }
-        }
-
-        return shiftOnX;
-    }
-
-    bu ksiim deneme bu silinecek A
-    */
 
     private float GetXPositionForShapeSquare(ShapeData shapeData, int column, Vector2 moveDistance)
     {
@@ -238,6 +175,7 @@ public class Shape : MonoBehaviour, IPointerClickHandler, IPointerUpHandler, IBe
     public void OnEndDrag(PointerEventData eventData)
     {
         this.GetComponent<RectTransform>().localScale = _shapeStartScale;
+        GameEvents.CheckShapeCanBePlaced();
     }
 
     public void OnPointerDown(PointerEventData eventData)

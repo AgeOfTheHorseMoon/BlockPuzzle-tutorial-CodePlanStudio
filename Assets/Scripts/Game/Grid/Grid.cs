@@ -5,6 +5,7 @@ using UnityEngine.UIElements;
 
 public class Grid : MonoBehaviour
 {
+    public ShapeStorage shapeStorage;
     public int columns = 0;
     public int rows = 0;
     public float squareGap = 0.1f;
@@ -15,6 +16,16 @@ public class Grid : MonoBehaviour
 
     private Vector2 _offset = new Vector2 (0.0f, 0.0f);
     private List<GameObject> _gridSquares = new List<GameObject> ();
+
+    private void OnEnable()
+    {
+        GameEvents.CheckShapeCanBePlaced += CheckShapeCanBePlaced;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.CheckShapeCanBePlaced -= CheckShapeCanBePlaced;
+    }
 
     void Start()
     {
@@ -90,4 +101,23 @@ public class Grid : MonoBehaviour
             }    
         }
     }
+
+    private void CheckShapeCanBePlaced()
+    {
+        var squareIndexes = new List<int>();
+
+        foreach (var square in _gridSquares)
+        {
+            var gridSquare = square.GetComponent<GridSquare>();
+
+            if(gridSquare.Selected && !gridSquare.SquareOccupied)
+            {
+                squareIndexes.Add(gridSquare.SquareIndex);
+                gridSquare.Selected = false;
+                //gridSquare.ActivateSquare();
+            }
+        }
+        shapeStorage.GetCurrentSelectedShape().DeactivateShape();
+    }
+
 }
